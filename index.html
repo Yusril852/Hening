@@ -79,7 +79,7 @@ const $=s=>document.querySelector(s), au=$('#au'), APP='Hening';
 const ls={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 let key=ls.get('h_key',''), base=ls.get('h_base','https://api.audius.co/v1'), favs=ls.get('h_favs',[]);
 let tab='Trending', list=[], cur=null, shuffle=false, repeat=0, seq=0;
-const TABS=['Trending','Electronic','Hip-Hop/Rap','Lo-Fi','Pop','Rock','Ambient','Jazz','Favorit'];
+const TABS=['Trending','Indonesia','Electronic','Hip-Hop/Rap','Lo-Fi','Pop','Rock','Ambient','Jazz','Favorit'];
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt=s=>s>0?Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0'):'0:00';
 const art=t=>t.artwork&&(t.artwork['150x150']||t.artwork['480x480']||'')||'';
@@ -100,6 +100,13 @@ async function load(){
   try{
     let d;
     if(q)d=await api('/tracks/search',{query:q,limit:40});
+    else if(tab==='Indonesia'){
+      const KW=['indonesia','indie indonesia','jakarta','bandung','yogyakarta','bahasa indonesia'];
+      const rs=await Promise.allSettled(KW.map(k=>api('/tracks/search',{query:k,limit:15})));
+      if(rs.every(r=>r.status==='rejected'))throw rs[0].reason;
+      const seen=new Set();d=[];
+      for(let i=0;i<15;i++)for(const r of rs){const t=r.status==='fulfilled'&&r.value[i];if(t&&!seen.has(t.id)){seen.add(t.id);d.push(t)}}
+    }
     else d=await api('/tracks/trending',tab==='Trending'?{limit:40}:{genre:tab,limit:40});
     if(my!==seq)return;
     list=d.filter(t=>t.is_streamable!==false);draw();
