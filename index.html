@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Hening – Musik Streaming Tanpa Iklan</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#1db36b">
 <style>
 :root{--bg:#f6f4ef;--panel:#fff;--ink:#17181a;--mute:#6b6f76;--line:#e4e1d9;--acc:#1db36b;--hover:#efece4;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root{--bg:#0e0f11;--panel:#17181b;--ink:#f1f1ef;--mute:#9a9ea6;--line:#26282c;--acc:#2fd283;--hover:#202226}}
@@ -48,6 +52,8 @@ input[type=range]{flex:1;accent-color:var(--acc);height:20px;padding:0;border:0;
 .fch{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .fch button{padding:5px 10px;border:1px solid var(--line);border-radius:99px}.fch button.on{background:var(--ink);color:var(--bg)}
 @media (max-width:760px){#drv{margin:0 14px 8px}}
+#drv label{display:block;margin-top:8px}#drv label input{width:auto;margin:0 6px 0 0}#drv select{margin-left:6px;padding:4px 10px}
+.cov{overflow:hidden}.cov img{width:100%;height:100%;object-fit:cover;display:block}
 </style>
 </head>
 <body>
@@ -67,6 +73,10 @@ input[type=range]{flex:1;accent-color:var(--acc);height:20px;padding:0;border:0;
   <input id="gk" placeholder="Kunci API Google (kosongkan jika sudah diisi pemilik)" autocomplete="off">
   <div class="row2"><input id="fl" placeholder="Tempel link atau ID folder Drive"><button class="ghost" id="fadd">Tambah</button><button class="ghost" id="fref">Segarkan</button></div>
   <div class="fch" id="fch"></div>
+  <label><input type="checkbox" id="sv"> Mode hemat: unduh lagu Drive sekali, putar ulang tanpa kuota</label>
+  <label><input type="checkbox" id="wf"> Unduh lagu baru hanya lewat Wi‑Fi (bila terdeteksi)</label>
+  <label>Batas simpanan <select id="lm"><option value="100">100 MB</option><option value="300">300 MB</option><option value="1000">1 GB</option></select></label>
+  <div id="off" style="margin-top:8px"></div>
  </div>
  <div class="chips" id="chips"></div>
  <div class="list" id="list"></div>
@@ -90,6 +100,7 @@ input[type=range]{flex:1;accent-color:var(--acc);height:20px;padding:0;border:0;
 /* PEMILIK: isi sekali di sini agar semua pengunjung langsung bisa memakai Drive bersama.
    DRIVE_KEY = kunci API Google (batasi ke Drive API + alamat situs Anda).
    DRIVE_FOLDERS = [{id:'ID_FOLDER',name:'Nama Playlist'}] */
+let bust=false;
 const DRIVE_KEY='AIzaSyAcL4KJLAlALMkQ4FwvtSu2vM6VjwEgqWM', DRIVE_FOLDERS=[{id:'19vUxz9H5pd7n05mJ6E46ZyaEfMVh1nka',name:'Drive Bersama'}];
 const $=s=>document.querySelector(s), au=$('#au'), APP='Hening';
 const ls={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
@@ -103,29 +114,39 @@ const link=t=>t.permalink?'https://audius.co'+t.permalink:'https://audius.co';
 const credit=t=>t.driveId?esc((t.user&&t.user.name)||'Drive')+' · Drive':`<a href="${link(t)}" target="_blank" rel="noopener" data-x>${esc((t.user&&t.user.name)||'Artis')}</a> · Audius`;
 const streamUrl=t=>t.driveId?`https://www.googleapis.com/drive/v3/files/${t.driveId}?alt=media&key=${encodeURIComponent(gkey)}`:`${base}/tracks/${encodeURIComponent(t.id)}/stream?app_name=${APP}`+(key?`&api_key=${encodeURIComponent(key)}`:'');
 
+const slim=t=>({id:t.id,title:t.title,user:{name:t.user&&t.user.name},duration:t.duration,artwork:{'150x150':art(t)},permalink:t.permalink,is_streamable:t.is_streamable});
+async function cached(k,fn){
+  k='h_c:'+k;const c=ls.get(k,null);
+  if(!bust&&c&&Date.now()-c.t<1800000)return c.d;
+  try{const d=await fn();ls.set(k,{t:Date.now(),d});return d}
+  catch(e){if(c)return c.d;throw e}
+}
 async function api(path,params={}){
-  const u=new URL(base+path);u.searchParams.set('app_name',APP);
-  for(const k in params)u.searchParams.set(k,params[k]);
-  const r=await fetch(u,{headers:key?{Authorization:'Bearer '+key}:{}});
-  if(!r.ok)throw new Error('HTTP '+r.status);
-  return (await r.json()).data||[];
+  return cached(path+JSON.stringify(params),async()=>{
+    const u=new URL(base+path);u.searchParams.set('app_name',APP);
+    for(const k in params)u.searchParams.set(k,params[k]);
+    const r=await fetch(u,{headers:key?{Authorization:'Bearer '+key}:{}});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return ((await r.json()).data||[]).map(slim);
+  });
 }
 async function load(){
   const my=++seq, q=$('#q').value.trim(), box=$('#list');
   if(tab==='Drive')return loadDrive(my,q);
-  if(tab==='Favorit'&&!q){list=favs;return draw()}
+  if(tab==='Favorit'){const s=q.toLowerCase();list=favs.filter(t=>!s||(t.title+' '+((t.user&&t.user.name)||'')).toLowerCase().includes(s));return draw()}
+  if(q&&q.length<2)return;
   box.innerHTML='<div class="msg">Memuat…</div>';
   try{
     let d;
-    if(q)d=await api('/tracks/search',{query:q,limit:40});
+    if(q)d=await api('/tracks/search',{query:q,limit:25});
     else if(tab==='Indonesia'){
-      const KW=['indonesia','indie indonesia','jakarta','bandung','yogyakarta','bahasa indonesia'];
-      const rs=await Promise.allSettled(KW.map(k=>api('/tracks/search',{query:k,limit:15})));
+      const KW=['indonesia','indie indonesia','jakarta','bandung'];
+      const rs=await Promise.allSettled(KW.map(k=>api('/tracks/search',{query:k,limit:10})));
       if(rs.every(r=>r.status==='rejected'))throw rs[0].reason;
       const seen=new Set();d=[];
-      for(let i=0;i<15;i++)for(const r of rs){const t=r.status==='fulfilled'&&r.value[i];if(t&&!seen.has(t.id)){seen.add(t.id);d.push(t)}}
+      for(let i=0;i<10;i++)for(const r of rs){const t=r.status==='fulfilled'&&r.value[i];if(t&&!seen.has(t.id)){seen.add(t.id);d.push(t)}}
     }
-    else d=await api('/tracks/trending',tab==='Trending'?{limit:40}:{genre:tab,limit:40});
+    else d=await api('/tracks/trending',tab==='Trending'?{limit:25}:{genre:tab,limit:25});
     if(my!==seq)return;
     list=d.filter(t=>t.is_streamable!==false);draw();
   }catch(e){
@@ -137,13 +158,13 @@ function draw(){
   const box=$('#list');
   if(!list.length){box.innerHTML='<div class="msg">'+(tab==='Favorit'?'Belum ada favorit. Tekan ♡ pada lagu.':'Tidak ada hasil.')+'</div>';return}
   box.innerHTML=list.map((t,i)=>`<div class="row${cur&&cur.id===t.id?' cur':''}" data-i="${i}">
-   <div class="cov" style="background-image:url('${esc(art(t))}')"></div>
+   <div class="cov">${art(t)?`<img src="${esc(art(t))}" loading="lazy" decoding="async" width="48" height="48" alt="">`:''}</div>
    <div style="min-width:0"><div class="t">${esc(t.title)}</div><div class="s">${credit(t)}</div></div>
    <div class="d">${t.duration?fmt(t.duration):''}</div>
-   <button class="heart${favs.some(f=>f.id===t.id)?' on':''}" data-f aria-label="Favorit">${favs.some(f=>f.id===t.id)?'♥':'♡'}</button></div>`).join('');
+   <span style="display:flex">${obtn(t)}<button class="heart${favs.some(f=>f.id===t.id)?' on':''}" data-f aria-label="Favorit">${favs.some(f=>f.id===t.id)?'♥':'♡'}</button></span></div>`).join('');
 }
 function play(t){
-  cur=t;au.src=streamUrl(t);au.play().catch(()=>{});
+  cur=t;setSrc(t);
   $('#nt').textContent=t.title;$('#ns').innerHTML=credit(t);
   $('#ncov').style.backgroundImage=`url('${art(t)}')`;draw();
   if('mediaSession' in navigator){const a=t.artwork&&(t.artwork['480x480']||art(t));
@@ -161,11 +182,12 @@ $('#list').onclick=e=>{
   if(e.target.closest('[data-f]')){
     favs=favs.some(f=>f.id===t.id)?favs.filter(f=>f.id!==t.id):[...favs,t];ls.set('h_favs',favs);
     if(tab==='Favorit'&&!$('#q').value){list=favs}draw();return}
+  if(e.target.closest('[data-o]')){toggleOff(t);return}
   play(t);
 };
 function chips(){$('#drv').style.display=tab==='Drive'?'block':'none';$('#chips').innerHTML=TABS.map(n=>`<button class="${n===tab?'on':''}">${n==='Trending'?'Populer':n}</button>`).join('')}
 $('#chips').onclick=e=>{const b=e.target.closest('button');if(!b)return;tab=TABS[[...b.parentNode.children].indexOf(b)];$('#q').value='';chips();load()};
-let qt;$('#q').oninput=()=>{clearTimeout(qt);qt=setTimeout(load,350)};
+let qt;$('#q').oninput=()=>{clearTimeout(qt);qt=setTimeout(load,600)};
 $('#gear').onclick=()=>{const s=$('#set');s.style.display=s.style.display==='block'?'none':'block'};
 $('#key').value=key;$('#base').value=base;
 $('#key').onchange=e=>{key=e.target.value.trim();ls.set('h_key',key);load()};
@@ -205,12 +227,14 @@ async function loadDrive(my,q){
   box.innerHTML='<div class="msg">Memuat…</div>';
   try{
     const fs=folders.filter(f=>fsel==='all'||f.id===fsel);
-    const rs=await Promise.all(fs.map(async f=>{
+    const rs=await Promise.all(fs.map(f=>cached('drive:'+f.id,async()=>{
       const cq=`'${f.id}' in parents and trashed=false and (mimeType contains 'audio/' or name contains '.mp3' or name contains '.m4a' or name contains '.flac' or name contains '.ogg' or name contains '.wav')`;
       const u=`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(cq)}&fields=files(id,name)&orderBy=name&pageSize=1000&key=${encodeURIComponent(gkey)}`;
-      const r=await fetch(u); if(!r.ok)throw new Error('HTTP '+r.status+' – '+f.name);
-      return (await r.json()).files.map(x=>mk(x,f));
-    }));
+      const r=await fetch(u);
+      if(!r.ok){let m='';try{const j=await r.json();m=' – '+((j.error&&(j.error.message||''))||'').slice(0,160)+' ['+((j.error&&j.error.errors&&j.error.errors[0]&&j.error.errors[0].reason)||'')+']'}catch(_){}
+        throw new Error('HTTP '+r.status+m)}
+      return (await r.json()).files;
+    }).then(fl=>fl.map(x=>mk(x,f)))));
     if(my!==seq)return;
     const s=q.toLowerCase();
     list=rs.flat().filter(t=>!s||(t.title+' '+t.user.name).toLowerCase().includes(s)); draw();
@@ -229,7 +253,7 @@ $('#fadd').onclick=async()=>{
     folders.push({id,name:(await r.json()).name,mine:true}); saveF(); $('#fl').value=''; fchips(); load();
   }catch(e){$('#fl').value='';$('#fl').placeholder='Gagal: cek kunci API dan izin folder'}
 };
-$('#fref').onclick=load;
+$('#fref').onclick=()=>{bust=true;Promise.resolve(load()).finally(()=>bust=false)};
 $('#fch').onclick=e=>{
   const b=e.target.closest('button'); if(!b)return;
   if(b.dataset.rm){folders=folders.filter(f=>f.id!==b.dataset.rm);saveF();if(fsel===b.dataset.rm)fsel='all'}
@@ -237,6 +261,73 @@ $('#fch').onclick=e=>{
   fchips(); load();
 };
 fchips();
+
+/* ---------- hemat kuota: simpan lagu Drive di perangkat ---------- */
+let saveMode=ls.get('h_sv',true), wifiOnly=ls.get('h_wf',true), limitMB=ls.get('h_lm',300), offIdx=ls.get('h_off',{}), curBlobUrl=null;
+const dling=new Set();
+const OFF=new Promise((res,rej)=>{try{const r=indexedDB.open('hening-off',1);r.onupgradeneeded=()=>r.result.createObjectStore('f',{keyPath:'id'});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}});
+const otx=async(mode,fn)=>{const d=await OFF;return new Promise((res,rej)=>{const t=d.transaction('f',mode),q=fn(t.objectStore('f'));t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error)})};
+const saveOff=()=>ls.set('h_off',offIdx);
+const mb=n=>(n/1048576).toFixed(n>1e8?0:1);
+function upd(){
+  const ids=Object.keys(offIdx), tot=ids.reduce((a,i)=>a+offIdx[i].size,0);
+  $('#off').innerHTML=`Tersimpan offline: ${ids.length} lagu · ${mb(tot)} MB `+(ids.length?'<button class="ghost" id="offclr">Hapus semua</button>':'');
+}
+const obtn=t=>t.driveId?`<button class="heart${offIdx[t.driveId]?' on':''}" data-o title="${offIdx[t.driveId]?'Hapus dari offline':'Simpan offline'}" aria-label="Simpan offline">${dling.has(t.driveId)?'…':offIdx[t.driveId]?'✓':'⬇'}</button>`:'';
+function canDownload(){const c=navigator.connection;return !(wifiOnly&&c&&(c.type==='cellular'||c.saveData))}
+async function evict(){
+  let ids=Object.keys(offIdx).sort((a,b)=>offIdx[a].t-offIdx[b].t), tot=ids.reduce((a,i)=>a+offIdx[i].size,0);
+  while(tot>limitMB*1048576&&ids.length>1){
+    const i=ids.shift(); if(cur&&cur.driveId===i)continue;
+    tot-=offIdx[i].size; delete offIdx[i]; await otx('readwrite',s=>s.delete(i));
+  }
+}
+async function download(t){
+  const r=await fetch(streamUrl(t)); if(!r.ok)throw new Error('HTTP '+r.status);
+  const total=+r.headers.get('Content-Length')||0, rd=r.body.getReader(), ch=[]; let got=0;
+  for(;;){
+    const {done,value}=await rd.read(); if(done)break; ch.push(value); got+=value.length;
+    if(cur===t)$('#ns').textContent='Mengunduh '+(total?Math.round(got/total*100)+'%':mb(got)+' MB');
+  }
+  let ty=r.headers.get('Content-Type')||''; if(ty.indexOf('audio/')!==0)ty='audio/mpeg';
+  const blob=new Blob(ch,{type:ty});
+  await otx('readwrite',s=>s.put({id:t.driveId,blob}));
+  offIdx[t.driveId]={size:blob.size,t:Date.now(),n:t.title};
+  await evict(); saveOff(); upd();
+  return {blob};
+}
+async function setSrc(t){
+  await 0;
+  if(curBlobUrl){URL.revokeObjectURL(curBlobUrl);curBlobUrl=null}
+  if(!t.driveId||!saveMode){au.src=streamUrl(t);au.play().catch(()=>{});return}
+  try{
+    let rec=offIdx[t.driveId]?await otx('readonly',s=>s.get(t.driveId)):null;
+    if(!rec||!rec.blob){
+      if(!canDownload()){if(cur===t)$('#ns').textContent='Lagu baru butuh Wi‑Fi (mode hemat). Ubah di panel Drive.';return}
+      rec=await download(t);
+    }
+    if(cur!==t)return;
+    curBlobUrl=URL.createObjectURL(rec.blob); au.src=curBlobUrl; $('#ns').innerHTML=credit(t); au.play().catch(()=>{});
+    if(offIdx[t.driveId]){offIdx[t.driveId].t=Date.now();saveOff()}
+  }catch(e){if(cur===t){au.src=streamUrl(t);$('#ns').innerHTML=credit(t);au.play().catch(()=>{})}}
+}
+async function toggleOff(t){
+  const id=t.driveId;
+  if(offIdx[id]){delete offIdx[id];saveOff();await otx('readwrite',s=>s.delete(id)).catch(()=>{});upd();draw();return}
+  if(!canDownload()){$('#ns').textContent='Butuh Wi‑Fi untuk mengunduh (mode hemat).';return}
+  dling.add(id);draw();
+  try{await download(t)}catch(e){}
+  dling.delete(id);upd();draw();
+}
+$('#sv').checked=saveMode;$('#wf').checked=wifiOnly;$('#lm').value=String(limitMB);
+$('#sv').onchange=e=>{saveMode=e.target.checked;ls.set('h_sv',saveMode)};
+$('#wf').onchange=e=>{wifiOnly=e.target.checked;ls.set('h_wf',wifiOnly)};
+$('#lm').onchange=async e=>{limitMB=+e.target.value;ls.set('h_lm',limitMB);await evict();saveOff();upd();draw()};
+$('#off').onclick=async e=>{if(e.target.id==='offclr'){await otx('readwrite',s=>s.clear()).catch(()=>{});offIdx={};saveOff();upd();draw()}};
+/* buang cache daftar lagu yang lebih dari 1 hari */
+try{Object.keys(localStorage).filter(k=>k.indexOf('h_c:')===0).forEach(k=>{const c=ls.get(k,null);if(!c||Date.now()-c.t>864e5)localStorage.removeItem(k)})}catch(e){}
+upd();
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 chips();load();
 </script>
 </body>
