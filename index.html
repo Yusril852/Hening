@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#F2F3FA">
 <script>try{var _t=JSON.parse(localStorage.getItem('h_th'));if(_t==='light'||_t==='dark')document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script>
 <style>
-:root{--bg:#F2F3FA;--surface:#FFFFFF;--ink:#1B1E3B;--mute:#666B8E;--line:#E1E3F0;--accent:#5A47D6;--tint:#ECE9FC;--hover:#F6F7FC;--glass:rgba(255,255,255,.84);--shadow:0 12px 32px -10px rgba(40,40,110,.32);--g:linear-gradient(110deg,#FFB45E,#F4698C 55%,#7B5DF2);--gb:linear-gradient(135deg,#FFB45E,#F4698C);color-scheme:light;
+:root{--bg:#F2F3FA;--surface:#FFFFFF;--ink:#1B1E3B;--mute:#666B8E;--line:#E1E3F0;--accent:#5A47D6;--tint:#ECE9FC;--hover:#F6F7FC;--glass:rgba(255,255,255,.84);--shadow:0 12px 32px -10px rgba(40,40,110,.32);--g:linear-gradient(110deg,#FFB45E,#F4698C 55%,#7B5DF2);--gb:linear-gradient(135deg,#FFB45E,#F4698C);--serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;color-scheme:light;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#11132A;--surface:#1A1D3B;--ink:#EEEFFB;--mute:#A0A3CC;--line:#2B2F57;--accent:#FFB45E;--tint:#252A4F;--hover:#1F2345;--glass:rgba(26,29,59,.82);--shadow:0 14px 36px -10px rgba(0,0,0,.65);color-scheme:dark;}}
 :root[data-theme="dark"]{--bg:#11132A;--surface:#1A1D3B;--ink:#EEEFFB;--mute:#A0A3CC;--line:#2B2F57;--accent:#FFB45E;--tint:#252A4F;--hover:#1F2345;--glass:rgba(26,29,59,.82);--shadow:0 14px 36px -10px rgba(0,0,0,.65);color-scheme:dark;}
@@ -19,40 +19,56 @@ html,body{height:100%}
 body{background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;overflow:hidden}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;border-radius:10px}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-main{flex:1;display:flex;flex-direction:column;min-height:0;max-width:960px;width:100%;margin:0 auto}
-.top{display:flex;gap:10px;align-items:center;padding:20px 22px 10px;flex-wrap:wrap}
-.logo{display:flex;align-items:baseline;gap:12px;margin-right:auto;font:italic 600 32px/1 "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;letter-spacing:-.01em}
+main{flex:1;display:flex;flex-direction:column;min-height:0;max-width:1120px;width:100%;margin:0 auto}
+.top{display:flex;gap:10px;align-items:center;padding:22px 24px 6px;flex-wrap:wrap}
+.logo{display:flex;align-items:baseline;gap:12px;margin-right:auto;font:italic 600 34px/1 var(--serif);letter-spacing:-.01em}
 .logo b{color:var(--accent);font-style:normal}
 .tag{font:500 12px/1 system-ui,sans-serif;color:var(--mute);border:1px solid var(--line);padding:5px 10px;border-radius:99px}
 input,select{background:var(--surface);border:1px solid var(--line);color:var(--ink);padding:10px 16px;border-radius:12px;font:inherit}
-#q{flex:1;min-width:150px;max-width:340px;border-radius:99px}
+#q{flex:1;min-width:150px;max-width:360px;border-radius:99px}
 .ico{width:40px;height:40px;border:1px solid var(--line);border-radius:50%;background:var(--surface);color:var(--mute);font-size:17px;display:grid;place-items:center;padding:0}
 .ico:hover{color:var(--ink)}
-.ghost{border:1px solid var(--line);padding:8px 14px;border-radius:99px;color:var(--mute);background:var(--surface)}
+.ghost{border:1px solid var(--line);padding:7px 15px;border-radius:99px;color:var(--mute);background:var(--surface);font-size:13.5px}
 .ghost:hover{color:var(--ink)}
-.chips{display:flex;gap:8px;padding:6px 22px 12px;overflow-x:auto;scrollbar-width:none}
+.chips{display:flex;gap:4px;padding:4px;margin:12px 24px 12px;width:max-content;max-width:calc(100% - 48px);background:var(--surface);border:1px solid var(--line);border-radius:99px;overflow-x:auto;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
-.chips button{flex:none;padding:8px 16px;border:1px solid var(--line);background:var(--surface);border-radius:99px;color:var(--mute);white-space:nowrap}
+.chips button{flex:none;padding:9px 22px;border-radius:99px;color:var(--mute);font-weight:500;white-space:nowrap}
 .chips button:hover{color:var(--ink)}
-.chips button.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
-#set,#drv{display:none;margin:0 22px 10px;padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--surface);font-size:13px;line-height:1.5;color:var(--mute)}
-#set input,#set select,#drv input{width:100%;margin-top:8px}
-#drv label{display:block;margin-top:10px}
-#drv label input{width:auto;margin:0 8px 0 0}
-#drv select{margin-left:6px;padding:5px 12px}
+.chips button.on{background:var(--ink);color:var(--bg)}
+.gen{display:none;flex-wrap:wrap;gap:6px;padding:0 24px 12px}
+.gen button{padding:6px 14px;border:1px solid var(--line);border-radius:99px;color:var(--mute);font-size:13.5px}
+.gen button:hover{color:var(--ink);background:var(--surface)}
+.gen button.on{background:var(--tint);border-color:transparent;color:var(--accent);font-weight:600}
+#drv{display:none;margin:0 24px 8px}
+.drow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fch{display:flex;gap:6px;flex-wrap:wrap;margin-right:auto}
+.fch button{padding:6px 14px;border:1px solid var(--line);border-radius:99px;color:var(--mute);font-size:13.5px}
+.fch button:hover{color:var(--ink)}
+.fch button.on{background:var(--tint);border-color:transparent;color:var(--accent);font-weight:600}
+#dman{display:none;margin-top:12px;padding:18px;border:1px solid var(--line);border-radius:18px;background:var(--surface);font-size:13px;line-height:1.5;color:var(--mute)}
+#dman .note{margin:0 0 4px}
+#dman input{width:100%;margin-top:8px}
+#dman label{display:block;margin-top:12px}
+#dman label input{width:auto;margin:0 8px 0 0}
+#dman select{margin-left:6px;padding:5px 12px}
+#off{margin-top:12px}
+.note{font-size:12px}
 .row2{display:flex;gap:8px;align-items:center}.row2 input{flex:1}.row2 .ghost{margin-top:8px;flex:none}
-.fch{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-.fch button{padding:5px 12px;border:1px solid var(--line);border-radius:99px}
-.fch button.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
-.note{margin-top:8px;font-size:12px}
-.list{flex:1;overflow-y:auto;padding:4px 14px 18px}
+.lh{display:flex;align-items:center;gap:12px;padding:6px 26px 4px}
+.lh h2{font:italic 600 27px/1.1 var(--serif);letter-spacing:-.01em}
+#lc{color:var(--mute);font-size:13px;margin-right:auto}
+.play-all{display:inline-flex;gap:8px;align-items:center;background:var(--ink);color:var(--bg);font-weight:600;padding:9px 18px;border-radius:99px}
+.list{flex:1;overflow-y:auto;padding:6px 16px 18px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.list::-webkit-scrollbar{width:8px}.list::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px}
 .row{display:grid;grid-template-columns:56px 1fr auto auto;gap:14px;align-items:center;padding:9px 10px;border-radius:16px;cursor:pointer}
 .row:hover{background:var(--hover)}
 .row.cur{background:var(--tint)}
 .row.cur .t{color:var(--accent)}
-.cov{width:56px;height:56px;border-radius:14px;background:var(--gb);overflow:hidden;flex:none;box-shadow:0 4px 12px -4px rgba(0,0,0,.35)}
+.cov{position:relative;width:56px;height:56px;border-radius:14px;background:var(--gb);overflow:hidden;flex:none;box-shadow:0 4px 12px -4px rgba(0,0,0,.35)}
 .cov img{width:100%;height:100%;object-fit:cover;display:block}
 #ncov{background-size:cover;background-position:center}
+.eq{position:absolute;inset:0;display:flex;gap:3px;align-items:flex-end;justify-content:center;padding-bottom:16px;background:rgba(10,12,30,.5)}
+.eq b{width:4px;height:8px;border-radius:2px;background:#fff}
 .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
 .s{font-size:12.5px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .s a{color:inherit}
@@ -61,9 +77,13 @@ input,select{background:var(--surface);border:1px solid var(--line);color:var(--
 .heart:hover{color:var(--ink)}
 .heart.on{color:var(--accent)}
 .msg{margin:10vh auto;text-align:center;color:var(--mute);max-width:360px;padding:20px}
-.bar{margin:0 14px 14px;padding:12px 18px;display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:18px;align-items:center;background:var(--glass);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow)}
+.sk{display:grid;grid-template-columns:56px 1fr;gap:14px;align-items:center;padding:9px 10px}
+.sk i{display:block;border-radius:12px;background:var(--line)}
+.sk .a{width:56px;height:56px}.sk .b{height:12px;width:55%;margin-bottom:8px}.sk .c{height:10px;width:30%}
+.bar{align-self:center;width:calc(100% - 28px);max-width:1120px;margin:0 0 14px;padding:12px 20px;display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:18px;align-items:center;background:var(--glass);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow)}
 .now{display:flex;gap:12px;align-items:center;min-width:0}
 .now .cov{width:52px;height:52px}
+.now .t{font:italic 600 17px/1.25 var(--serif)}
 .ctl{display:flex;flex-direction:column;gap:8px;align-items:center}
 .btns{display:flex;gap:8px;align-items:center}
 .btns button{width:40px;height:40px;font-size:17px;color:var(--mute)}
@@ -77,17 +97,30 @@ input[type=range]::-moz-range-thumb{width:10px;height:10px;border-radius:50%;bac
 input[type=range]::-moz-range-track{background:transparent}
 .vol{display:flex;gap:10px;justify-content:flex-end;align-items:center;color:var(--mute)}
 .vol input{max-width:120px}
-@media (prefers-reduced-motion:no-preference){button,.row{transition:background-color .15s,color .15s,border-color .15s}}
+@media (prefers-reduced-motion:no-preference){
+ button{transition:background-color .15s,color .15s,border-color .15s}
+ .sk i{animation:pulse 1.4s ease-in-out infinite}
+ body.playing .eq b{animation:eq .9s ease-in-out infinite}
+ body.playing .eq b:nth-child(2){animation-delay:.3s}
+ body.playing .eq b:nth-child(3){animation-delay:.6s}
+}
+@keyframes pulse{50%{opacity:.45}}
+@keyframes eq{0%,100%{height:6px}50%{height:22px}}
 @media (max-width:760px){
- .top{padding:14px 16px 8px}.logo{font-size:27px}.tag{display:none}
+ .top{padding:16px 16px 4px}.logo{font-size:28px}.tag{display:none}
  #q{max-width:none;flex:1 1 100%;order:5}
- .chips{padding:4px 16px 10px}
- #set,#drv{margin:0 16px 10px}
- .list{padding:2px 8px 12px}
+ .chips{margin:10px 16px;max-width:calc(100% - 32px)}
+ .chips button{padding:9px 16px}
+ .gen{padding:0 16px 10px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+ .gen button{flex:none}
+ #drv{margin:0 16px 8px}
+ .lh{padding:4px 18px 2px}.lh h2{font-size:23px}
+ .list{padding:4px 8px 12px}
  .row{grid-template-columns:52px 1fr auto;gap:12px}
  .cov{width:52px;height:52px}
+ .sk{grid-template-columns:52px 1fr}.sk .a{width:52px;height:52px}
  .row .d{display:none}
- .bar{grid-template-columns:1fr;gap:10px;margin:0 10px 10px;padding:12px 14px;border-radius:22px}
+ .bar{grid-template-columns:1fr;gap:10px;width:calc(100% - 20px);margin:0 0 10px;padding:12px 14px;border-radius:22px}
  .vol{display:none}
 }
 </style>
@@ -97,25 +130,27 @@ input[type=range]::-moz-range-track{background:transparent}
  <div class="top">
   <div class="logo"><span>Hening<b>.</b></span><span class="tag">tanpa iklan</span></div>
   <input type="search" id="q" placeholder="Cari lagu atau artis…" aria-label="Cari">
-  <button class="ico" id="gear" aria-label="Pengaturan" title="Pengaturan">⚙</button>
   <button class="ico" id="thm" aria-label="Ganti tema"></button>
  </div>
- <div id="set">
-  Kunci API Audius (gratis di api.audius.co/plans). Kosongkan jika katalog sudah terbuka tanpa kunci.
-  <input id="key" placeholder="API key / bearer token" autocomplete="off">
-  <select id="base"><option value="https://api.audius.co/v1">api.audius.co</option><option value="https://discoveryprovider.audius.co/v1">discoveryprovider.audius.co</option></select>
- </div>
- <div id="drv">
-  <b>Drive bersama.</b> Folder Google Drive berisi lagu yang sah Anda miliki, dibagikan sebagai "Siapa saja yang memiliki link". Kontributor ditambahkan di Drive sebagai Editor dan mengunggah lagu di sana, lalu tekan Segarkan.
-  <input id="gk" placeholder="Kunci API Google (kosongkan jika sudah diisi pemilik)" autocomplete="off">
-  <div class="row2"><input id="fl" placeholder="Tempel link atau ID folder Drive"><button class="ghost" id="fadd">Tambah</button><button class="ghost" id="fref">Segarkan</button></div>
-  <div class="fch" id="fch"></div>
-  <label><input type="checkbox" id="sv"> Mode hemat: unduh lagu Drive sekali, putar ulang tanpa kuota</label>
-  <label><input type="checkbox" id="wf"> Unduh lagu baru hanya lewat Wi‑Fi (bila terdeteksi)</label>
-  <label>Batas simpanan <select id="lm"><option value="100">100 MB</option><option value="300">300 MB</option><option value="1000">1 GB</option></select></label>
-  <div id="off" style="margin-top:8px"></div>
- </div>
  <div class="chips" id="chips"></div>
+ <div class="gen" id="gen"></div>
+ <div id="drv">
+  <div class="drow">
+   <div class="fch" id="fch"></div>
+   <button class="ghost" id="fref" title="Ambil daftar terbaru dari Drive">Segarkan</button>
+   <button class="ghost" id="fman" aria-expanded="false">Kelola</button>
+  </div>
+  <div id="dman">
+   <p class="note">Folder Google Drive berisi lagu yang sah Anda miliki, dibagikan sebagai "Siapa saja yang memiliki link". Kontributor ditambahkan di Drive sebagai Editor, lalu tekan Segarkan.</p>
+   <input id="gk" placeholder="Kunci API Google (kosongkan jika sudah diisi pemilik)" autocomplete="off">
+   <div class="row2"><input id="fl" placeholder="Tempel link atau ID folder Drive"><button class="ghost" id="fadd">Tambah</button></div>
+   <label><input type="checkbox" id="sv"> Mode hemat: unduh lagu Drive sekali, putar ulang tanpa kuota</label>
+   <label><input type="checkbox" id="wf"> Unduh lagu baru hanya lewat Wi‑Fi (bila terdeteksi)</label>
+   <label>Batas simpanan <select id="lm"><option value="100">100 MB</option><option value="300">300 MB</option><option value="1000">1 GB</option></select></label>
+   <div id="off"></div>
+  </div>
+ </div>
+ <div class="lh"><h2 id="lt">Populer</h2><span id="lc"></span><button class="play-all" id="pall">▶ Putar semua</button></div>
  <div class="list" id="list"></div>
 </main>
 <div class="bar">
@@ -172,7 +207,7 @@ async function load(){
   if(tab==='Drive')return loadDrive(my,q);
   if(tab==='Favorit'){const s=q.toLowerCase();list=favs.filter(t=>!s||(t.title+' '+((t.user&&t.user.name)||'')).toLowerCase().includes(s));return draw()}
   if(q&&q.length<2)return;
-  box.innerHTML='<div class="msg">Memuat…</div>';
+  box.innerHTML=skel();
   try{
     let d;
     if(q)d=await api('/tracks/search',{query:q,limit:25});
@@ -193,9 +228,13 @@ async function load(){
 }
 function draw(){
   const box=$('#list');
+  const LT={Trending:'Populer'}, sq=$('#q').value.trim().length>1&&tab!=='Drive'&&tab!=='Favorit';
+  $('#lt').textContent=sq?'Hasil pencarian':(LT[tab]||tab);
+  $('#lc').textContent=list.length?list.length+' lagu':'';
+  $('#pall').style.display=list.length?'inline-flex':'none';
   if(!list.length){box.innerHTML='<div class="msg">'+(tab==='Favorit'?'Belum ada favorit. Tekan ♡ pada lagu.':'Tidak ada hasil.')+'</div>';return}
   box.innerHTML=list.map((t,i)=>`<div class="row${cur&&cur.id===t.id?' cur':''}" data-i="${i}">
-   <div class="cov">${art(t)?`<img src="${esc(art(t))}" loading="lazy" decoding="async" width="48" height="48" alt="">`:''}</div>
+   <div class="cov">${art(t)?`<img src="${esc(art(t))}" loading="lazy" decoding="async" width="56" height="56" alt="" onerror="this.remove()">`:''}${cur&&cur.id===t.id?'<i class="eq"><b></b><b></b><b></b></i>':''}</div>
    <div style="min-width:0"><div class="t">${esc(t.title)}</div><div class="s">${credit(t)}</div></div>
    <div class="d">${t.duration?fmt(t.duration):''}</div>
    <span style="display:flex">${obtn(t)}<button class="heart${favs.some(f=>f.id===t.id)?' on':''}" data-f aria-label="Favorit">${favs.some(f=>f.id===t.id)?'♥':'♡'}</button></span></div>`).join('');
@@ -222,19 +261,23 @@ $('#list').onclick=e=>{
   if(e.target.closest('[data-o]')){toggleOff(t);return}
   play(t);
 };
-function chips(){$('#drv').style.display=tab==='Drive'?'block':'none';$('#chips').innerHTML=TABS.map(n=>`<button class="${n===tab?'on':''}">${n==='Trending'?'Populer':n}</button>`).join('')}
-$('#chips').onclick=e=>{const b=e.target.closest('button');if(!b)return;tab=TABS[[...b.parentNode.children].indexOf(b)];$('#q').value='';chips();load()};
+const MAIN=[['Trending','Populer'],['Indonesia','Indonesia'],['Drive','Drive'],['Favorit','Favorit']], GEN=['Electronic','Hip-Hop/Rap','Lo-Fi','Pop','Rock','Ambient','Jazz'];
+function chips(){
+  const pop=tab==='Trending'||GEN.includes(tab);
+  $('#drv').style.display=tab==='Drive'?'block':'none';
+  $('#chips').innerHTML=MAIN.map(([k,n])=>`<button data-k="${k}" class="${k===tab||(k==='Trending'&&pop)?'on':''}">${n}</button>`).join('');
+  $('#gen').style.display=pop?'flex':'none';
+  $('#gen').innerHTML=GEN.map(g=>`<button data-k="${g}" class="${g===tab?'on':''}">${g}</button>`).join('');
+}
+const pick=e=>{const b=e.target.closest('button');if(!b)return;let k=b.dataset.k;if(k===tab&&GEN.includes(k))k='Trending';tab=k;$('#q').value='';chips();load()};
+$('#chips').onclick=$('#gen').onclick=pick;
 let qt;$('#q').oninput=()=>{clearTimeout(qt);qt=setTimeout(load,600)};
-$('#gear').onclick=()=>{const s=$('#set');s.style.display=s.style.display==='block'?'none':'block'};
-$('#key').value=key;$('#base').value=base;
-$('#key').onchange=e=>{key=e.target.value.trim();ls.set('h_key',key);load()};
-$('#base').onchange=e=>{base=e.target.value;ls.set('h_base',base);load()};
 const toggle=()=>{if(!cur){if(list.length)play(list[0]);return}au.paused?au.play():au.pause()};
 $('#pp').onclick=toggle;$('#next').onclick=()=>step(1);
 $('#prev').onclick=()=>{if(au.currentTime>3)au.currentTime=0;else step(-1)};
 $('#shuf').onclick=e=>{shuffle=!shuffle;e.currentTarget.classList.toggle('on',shuffle)};
 $('#rep').onclick=e=>{repeat=(repeat+1)%3;e.currentTarget.classList.toggle('on',repeat>0);e.currentTarget.textContent=repeat===2?'⟲¹':'⟲'};
-au.onplay=()=>$('#pp').textContent='⏸';au.onpause=()=>$('#pp').textContent='▶';
+au.onplay=()=>{$('#pp').textContent='⏸';document.body.classList.add('playing')};au.onpause=()=>{$('#pp').textContent='▶';document.body.classList.remove('playing')};
 au.onended=()=>{if(repeat===2){au.currentTime=0;au.play()}else step(1)};
 au.onerror=()=>{if(cur)$('#ns').textContent='Lagu gagal dimuat. Coba lagu lain atau periksa pengaturan.'};
 au.ontimeupdate=()=>{if(au.duration){$('#sk').value=au.currentTime/au.duration*1000;fillR($('#sk'));$('#cur').textContent=fmt(au.currentTime);$('#dur').textContent=fmt(au.duration)}};
@@ -261,7 +304,7 @@ async function loadDrive(my,q){
   const box=$('#list');
   if(!gkey){box.innerHTML='<div class="msg">Isi kunci API Google di panel atas, lalu tambahkan folder Drive.</div>';return}
   if(!folders.length){box.innerHTML='<div class="msg">Belum ada folder. Tempel link folder Drive di panel atas.</div>';return}
-  box.innerHTML='<div class="msg">Memuat…</div>';
+  box.innerHTML=skel();
   try{
     const fs=folders.filter(f=>fsel==='all'||f.id===fsel);
     const rs=await Promise.all(fs.map(f=>cached('drive:'+f.id,async()=>{
@@ -378,6 +421,9 @@ function applyTh(){
 $('#thm').onclick=()=>{th=TH[(TH.indexOf(th)+1)%3];ls.set('h_th',th);applyTh()};
 try{matchMedia('(prefers-color-scheme:dark)').addEventListener('change',applyTh)}catch(e){}
 applyTh();
+const skel=()=>Array(7).fill('<div class="sk"><i class="a"></i><div><i class="b"></i><i class="c"></i></div></div>').join('');
+$('#pall').onclick=()=>{if(list.length)play(list[0])};
+$('#fman').onclick=()=>{const m=$('#dman'),o=m.style.display==='block';m.style.display=o?'none':'block';$('#fman').setAttribute('aria-expanded',String(!o))};
 chips();load();
 </script>
 </body>
