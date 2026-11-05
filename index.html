@@ -42,6 +42,12 @@ input,select{background:var(--panel);border:1px solid var(--line);color:var(--in
 input[type=range]{flex:1;accent-color:var(--acc);height:20px;padding:0;border:0;background:none}
 .vol{display:flex;gap:8px;justify-content:flex-end;align-items:center}.vol input{max-width:110px}
 @media (max-width:760px){.bar{grid-template-columns:1fr;gap:6px;padding:10px 14px}.vol{display:none}.row{grid-template-columns:48px 1fr auto}.row .d{display:none}.top{padding:12px 14px 6px}.chips{padding:4px 14px 8px}#set{margin:0 14px 8px}}
+#drv{display:none;margin:0 20px 8px;padding:12px;border:1px dashed var(--line);border-radius:12px;font-size:13px;color:var(--mute)}
+#drv input{width:100%;margin-top:6px;border-radius:10px}
+.row2{display:flex;gap:6px;align-items:center}.row2 input{flex:1}.row2 .ghost{margin-top:6px;flex:none}
+.fch{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.fch button{padding:5px 10px;border:1px solid var(--line);border-radius:99px}.fch button.on{background:var(--ink);color:var(--bg)}
+@media (max-width:760px){#drv{margin:0 14px 8px}}
 </style>
 </head>
 <body>
@@ -55,6 +61,12 @@ input[type=range]{flex:1;accent-color:var(--acc);height:20px;padding:0;border:0;
   Kunci API Audius (gratis di api.audius.co/plans). Kosongkan jika katalog sudah terbuka tanpa kunci.
   <input id="key" placeholder="API key / bearer token" autocomplete="off">
   <select id="base"><option value="https://api.audius.co/v1">api.audius.co</option><option value="https://discoveryprovider.audius.co/v1">discoveryprovider.audius.co</option></select>
+ </div>
+ <div id="drv">
+  <b>Drive bersama.</b> Folder Google Drive berisi lagu yang sah Anda miliki, dibagikan sebagai "Siapa saja yang memiliki link". Kontributor ditambahkan di Drive sebagai Editor dan mengunggah lagu di sana, lalu tekan Segarkan.
+  <input id="gk" placeholder="Kunci API Google (kosongkan jika sudah diisi pemilik)" autocomplete="off">
+  <div class="row2"><input id="fl" placeholder="Tempel link atau ID folder Drive"><button class="ghost" id="fadd">Tambah</button><button class="ghost" id="fref">Segarkan</button></div>
+  <div class="fch" id="fch"></div>
  </div>
  <div class="chips" id="chips"></div>
  <div class="list" id="list"></div>
@@ -75,16 +87,21 @@ input[type=range]{flex:1;accent-color:var(--acc);height:20px;padding:0;border:0;
 </div>
 <audio id="au" preload="none"></audio>
 <script>
+/* PEMILIK: isi sekali di sini agar semua pengunjung langsung bisa memakai Drive bersama.
+   DRIVE_KEY = kunci API Google (batasi ke Drive API + alamat situs Anda).
+   DRIVE_FOLDERS = [{id:'ID_FOLDER',name:'Nama Playlist'}] */
+const DRIVE_KEY='', DRIVE_FOLDERS=[];
 const $=s=>document.querySelector(s), au=$('#au'), APP='Hening';
 const ls={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 let key=ls.get('h_key',''), base=ls.get('h_base','https://api.audius.co/v1'), favs=ls.get('h_favs',[]);
 let tab='Trending', list=[], cur=null, shuffle=false, repeat=0, seq=0;
-const TABS=['Trending','Indonesia','Electronic','Hip-Hop/Rap','Lo-Fi','Pop','Rock','Ambient','Jazz','Favorit'];
+const TABS=['Trending','Indonesia','Drive','Electronic','Hip-Hop/Rap','Lo-Fi','Pop','Rock','Ambient','Jazz','Favorit'];
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt=s=>s>0?Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0'):'0:00';
 const art=t=>t.artwork&&(t.artwork['150x150']||t.artwork['480x480']||'')||'';
 const link=t=>t.permalink?'https://audius.co'+t.permalink:'https://audius.co';
-const streamUrl=t=>`${base}/tracks/${encodeURIComponent(t.id)}/stream?app_name=${APP}`+(key?`&api_key=${encodeURIComponent(key)}`:'');
+const credit=t=>t.driveId?esc((t.user&&t.user.name)||'Drive')+' · Drive':`<a href="${link(t)}" target="_blank" rel="noopener" data-x>${esc((t.user&&t.user.name)||'Artis')}</a> · Audius`;
+const streamUrl=t=>t.driveId?`https://www.googleapis.com/drive/v3/files/${t.driveId}?alt=media&key=${encodeURIComponent(gkey)}`:`${base}/tracks/${encodeURIComponent(t.id)}/stream?app_name=${APP}`+(key?`&api_key=${encodeURIComponent(key)}`:'');
 
 async function api(path,params={}){
   const u=new URL(base+path);u.searchParams.set('app_name',APP);
@@ -95,6 +112,7 @@ async function api(path,params={}){
 }
 async function load(){
   const my=++seq, q=$('#q').value.trim(), box=$('#list');
+  if(tab==='Drive')return loadDrive(my,q);
   if(tab==='Favorit'&&!q){list=favs;return draw()}
   box.innerHTML='<div class="msg">Memuat…</div>';
   try{
@@ -120,13 +138,13 @@ function draw(){
   if(!list.length){box.innerHTML='<div class="msg">'+(tab==='Favorit'?'Belum ada favorit. Tekan ♡ pada lagu.':'Tidak ada hasil.')+'</div>';return}
   box.innerHTML=list.map((t,i)=>`<div class="row${cur&&cur.id===t.id?' cur':''}" data-i="${i}">
    <div class="cov" style="background-image:url('${esc(art(t))}')"></div>
-   <div style="min-width:0"><div class="t">${esc(t.title)}</div><div class="s"><a href="${link(t)}" target="_blank" rel="noopener" data-x>${esc((t.user&&t.user.name)||'Artis')}</a> · Audius</div></div>
-   <div class="d">${fmt(t.duration)}</div>
+   <div style="min-width:0"><div class="t">${esc(t.title)}</div><div class="s">${credit(t)}</div></div>
+   <div class="d">${t.duration?fmt(t.duration):''}</div>
    <button class="heart${favs.some(f=>f.id===t.id)?' on':''}" data-f aria-label="Favorit">${favs.some(f=>f.id===t.id)?'♥':'♡'}</button></div>`).join('');
 }
 function play(t){
   cur=t;au.src=streamUrl(t);au.play().catch(()=>{});
-  $('#nt').textContent=t.title;$('#ns').innerHTML=`<a href="${link(t)}" target="_blank" rel="noopener" style="color:inherit">${esc((t.user&&t.user.name)||'Artis')}</a> · Audius`;
+  $('#nt').textContent=t.title;$('#ns').innerHTML=credit(t);
   $('#ncov').style.backgroundImage=`url('${art(t)}')`;draw();
   if('mediaSession' in navigator){const a=t.artwork&&(t.artwork['480x480']||art(t));
     navigator.mediaSession.metadata=new MediaMetadata({title:t.title,artist:(t.user&&t.user.name)||'',artwork:a?[{src:a}]:[]})}
@@ -145,7 +163,7 @@ $('#list').onclick=e=>{
     if(tab==='Favorit'&&!$('#q').value){list=favs}draw();return}
   play(t);
 };
-function chips(){$('#chips').innerHTML=TABS.map(n=>`<button class="${n===tab?'on':''}">${n==='Trending'?'Populer':n}</button>`).join('')}
+function chips(){$('#drv').style.display=tab==='Drive'?'block':'none';$('#chips').innerHTML=TABS.map(n=>`<button class="${n===tab?'on':''}">${n==='Trending'?'Populer':n}</button>`).join('')}
 $('#chips').onclick=e=>{const b=e.target.closest('button');if(!b)return;tab=TABS[[...b.parentNode.children].indexOf(b)];$('#q').value='';chips();load()};
 let qt;$('#q').oninput=()=>{clearTimeout(qt);qt=setTimeout(load,350)};
 $('#gear').onclick=()=>{const s=$('#set');s.style.display=s.style.display==='block'?'none':'block'};
@@ -168,6 +186,57 @@ addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'&&e.target.type!=='r
 if('mediaSession' in navigator){const m=navigator.mediaSession;
   m.setActionHandler('play',()=>au.play());m.setActionHandler('pause',()=>au.pause());
   m.setActionHandler('nexttrack',()=>step(1));m.setActionHandler('previoustrack',()=>step(-1))}
+/* ---------- Google Drive bersama ---------- */
+let gkey=ls.get('h_gkey','')||DRIVE_KEY, fsel='all';
+let folders=[...DRIVE_FOLDERS,...ls.get('h_folders',[]).map(f=>({...f,mine:true}))];
+const fid=s=>{const m=s.match(/folders\/([\w-]+)|[?&]id=([\w-]+)|^([\w-]{15,})$/);return m&&(m[1]||m[2]||m[3])};
+const saveF=()=>ls.set('h_folders',folders.filter(f=>f.mine).map(f=>({id:f.id,name:f.name})));
+function fchips(){
+  $('#fch').innerHTML=[{id:'all',name:'Semua folder'},...folders].map(f=>`<button data-id="${esc(f.id)}" class="${f.id===fsel?'on':''}">${esc(f.name)}</button>`+(f.mine?`<button data-rm="${esc(f.id)}" aria-label="Hapus folder">×</button>`:'')).join('');
+}
+function mk(x,f){
+  const n=x.name.replace(/\.[^.]+$/,''), m=n.match(/^(.+?)\s[-–]\s(.+)$/);
+  return {id:'gd:'+x.id,driveId:x.id,title:m?m[2]:n,user:{name:m?m[1]:f.name},duration:0};
+}
+async function loadDrive(my,q){
+  const box=$('#list');
+  if(!gkey){box.innerHTML='<div class="msg">Isi kunci API Google di panel atas, lalu tambahkan folder Drive.</div>';return}
+  if(!folders.length){box.innerHTML='<div class="msg">Belum ada folder. Tempel link folder Drive di panel atas.</div>';return}
+  box.innerHTML='<div class="msg">Memuat…</div>';
+  try{
+    const fs=folders.filter(f=>fsel==='all'||f.id===fsel);
+    const rs=await Promise.all(fs.map(async f=>{
+      const cq=`'${f.id}' in parents and trashed=false and (mimeType contains 'audio/' or name contains '.mp3' or name contains '.m4a' or name contains '.flac' or name contains '.ogg' or name contains '.wav')`;
+      const u=`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(cq)}&fields=files(id,name)&orderBy=name&pageSize=1000&key=${encodeURIComponent(gkey)}`;
+      const r=await fetch(u); if(!r.ok)throw new Error('HTTP '+r.status+' – '+f.name);
+      return (await r.json()).files.map(x=>mk(x,f));
+    }));
+    if(my!==seq)return;
+    const s=q.toLowerCase();
+    list=rs.flat().filter(t=>!s||(t.title+' '+t.user.name).toLowerCase().includes(s)); draw();
+  }catch(e){
+    if(my!==seq)return;
+    box.innerHTML=`<div class="msg">Gagal memuat Drive (${esc(e.message)}).<br><br>Periksa: Google Drive API sudah aktif, kunci API benar, dan folder dibagikan "Siapa saja yang memiliki link".</div>`;
+  }
+}
+$('#gk').value=ls.get('h_gkey','');
+$('#gk').onchange=e=>{const v=e.target.value.trim();ls.set('h_gkey',v);gkey=v||DRIVE_KEY;load()};
+$('#fadd').onclick=async()=>{
+  const id=fid($('#fl').value.trim()); if(!id||folders.some(f=>f.id===id))return;
+  try{
+    const r=await fetch(`https://www.googleapis.com/drive/v3/files/${id}?fields=name&key=${encodeURIComponent(gkey)}`);
+    if(!r.ok)throw 0;
+    folders.push({id,name:(await r.json()).name,mine:true}); saveF(); $('#fl').value=''; fchips(); load();
+  }catch(e){$('#fl').value='';$('#fl').placeholder='Gagal: cek kunci API dan izin folder'}
+};
+$('#fref').onclick=load;
+$('#fch').onclick=e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  if(b.dataset.rm){folders=folders.filter(f=>f.id!==b.dataset.rm);saveF();if(fsel===b.dataset.rm)fsel='all'}
+  else fsel=b.dataset.id;
+  fchips(); load();
+};
+fchips();
 chips();load();
 </script>
 </body>
