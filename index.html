@@ -90,7 +90,7 @@ input[type=range]{flex:1;accent-color:var(--acc);height:20px;padding:0;border:0;
 /* PEMILIK: isi sekali di sini agar semua pengunjung langsung bisa memakai Drive bersama.
    DRIVE_KEY = kunci API Google (batasi ke Drive API + alamat situs Anda).
    DRIVE_FOLDERS = [{id:'ID_FOLDER',name:'Nama Playlist'}] */
-const DRIVE_KEY='', DRIVE_FOLDERS=[];
+const DRIVE_KEY='AIzaSyAcL4KJLAlALMkQ4FwvtSu2vM6VjwEgqWM', DRIVE_FOLDERS=[{id:'19vUxz9H5pd7n05mJ6E46ZyaEfMVh1nka',name:'Drive Bersama'}];
 const $=s=>document.querySelector(s), au=$('#au'), APP='Hening';
 const ls={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 let key=ls.get('h_key',''), base=ls.get('h_base','https://api.audius.co/v1'), favs=ls.get('h_favs',[]);
